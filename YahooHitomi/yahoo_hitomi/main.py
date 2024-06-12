@@ -20,6 +20,7 @@ class Main:
 
 	term_list_file_path = "G:\マイドライブ\ドライブ\IT系\GitHub\YahooHitomi\list.txt"
 	last_exit_term_file_path = "G:\マイドライブ\ドライブ\IT系\GitHub\YahooHitomi\dat.txt"
+	screen_shot_path = "G:\マイドライブ\ドライブ\クラウドワークス\yahoo案件/"
 	logger = None
 
 	def __init__(self):
@@ -78,7 +79,7 @@ class Main:
 		driver.execute_script(f"scrollBy({top},{down})")
 	
 	def click_sponsor_site(self, driver, element, roop_idx):
-		pyautogui.screenshot(f"../tests/screenshot_{roop_idx}.png")
+		pyautogui.screenshot(f"{self.screen_shot_path}screenshot_{roop_idx}.png")
 		try:
 			element.click()
 		except:
@@ -91,9 +92,9 @@ class Main:
 		driver.execute_script(f'document.getElementsByClassName("sw-Badge__text")[{site_index}].scrollIntoView(true);')
 		self.adjustment_scroll_by(driver, 0, -200)
 
-	def get_sponsor_domein(self, element):
-		href = element.get_attribute("href")
-		return urlparse(href).netloc
+	# def get_sponsor_domein(self, element):
+	# 	href = element.get_attribute("href")
+	# 	return urlparse(href).netloc
 	
 	def get_sponsor_element(self, element, idx):
 		print(f"----- //span[@class='sw-Badge__text']//ancestor::div[@class='sw-CardBase'][{idx}]//a")
@@ -140,8 +141,11 @@ class Main:
 				sleep(self.SEARCH_DISTANCE)
 				# どのサイトの情報を収集するか決める
 				sponsor = self.select_sponsor(element, site_index)
-				already_sponsor_domeins.append(self.get_sponsor_domein(sponsor))
-				self.logger.debug(f"already_sponsor_domeins: {already_sponsor_domeins}")
+				if sponsor is None:
+					i = i - 1
+					self.logger.debug(f"sponsor is None({i}): {already_sponsor_domeins}")
+					continue
+				# already_sponsor_domeins.append(self.get_sponsor_domein(sponsor))
 				
 				if site_index > 1:
 					# リンクが画面上に表示されるまでスクロールする
@@ -151,12 +155,18 @@ class Main:
 				# サイトをクリックする
 				self.click_sponsor_site(driver, sponsor, roop_idx)
 				sleep(self.SITE_DISTANCE)
+				if driver.current_url in already_sponsor_domeins:
+					i = i - 1
+					self.logger.debug(f"already_sponsor_domeins({i}): {driver.current_url}")
+					continue
+				already_sponsor_domeins.append(driver.current_url)
+				self.logger.debug(f"already_sponsor_domeins: {already_sponsor_domeins}")
 				# サイトの最下部までスクロール
 				driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
 				roop_idx = roop_idx + 1
 				sleep(1)
 				# スクリーンショット
-				pyautogui.screenshot(f"../tests/screenshot_{roop_idx}.png")
+				pyautogui.screenshot(f"{self.screen_shot_path}screenshot_{roop_idx}.png")
 				roop_idx = roop_idx + 1
 				site_index = site_index + 1
 				driver.close()
